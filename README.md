@@ -1,4 +1,4 @@
-## Weatherdriven
+## Choral Weather
 
 ### Features
 
@@ -10,7 +10,8 @@ TBD
 
 ## Features
 
-- Let users search for weather by city, ZIP code, or current location.
+- Let users search for weather by city, ZIP code.
+- Let user search for current location.
 - Request permission before using the user's current location.
 - Show the current temperature for the selected location.
 - Show the current weather condition, such as sunny, cloudy, rain, snow, or storm.
