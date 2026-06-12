@@ -42,18 +42,11 @@ export default function Home() {
   async function geocode() {
     const url = `https://geocoding-api.open-meteo.com/v1/search?name=${query}&count=10&language=en&format=json`;
     const response = await fetch(url);
-    console.log(`Response status: ${response.status} (${response.statusText})`)
     const responseDto: GeocodingResponseDto = await response.json()
-    console.log(`Got response DTO`)
-    console.log(responseDto)
     const resultDtos: Array<GeocodingResultDto> = responseDto.results
-    console.log(`Got result DTOs`)
-    console.log(resultDtos)
     const resultUims = resultDtos.map(
       (resultDto) => new GeocodingResultUim(resultDto.name, resultDto.admin2)
     )
-    console.log(`Got result UIMs`)
-    console.log(resultUims)
     setGeocodingResultUims(resultUims)
   }
 
