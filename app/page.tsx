@@ -11,15 +11,50 @@ import { useEffect, useState } from "react";
 // Doc: https://open-meteo.com/en/docs/geocoding-api?name=Montigny-sur-Loing#api_response
 // Call: https://api.open-meteo.com/v1/forecast?latitude=48.33575&longitude=2.74423&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_sum,precipitation_probability_max,weather_code&timezone=auto
 
+class GeocodingResultUim {
+  name: string
+  dept: string
+
+  constructor(name: string, dept: string) {
+    this.name = name
+    this.dept = dept
+  }
+}
+
+type GeocodingResultDto = {
+  id: number
+  name: string
+  admin1: string
+  admin2: string
+  admin3: string
+  admin4: string
+}
+
+type GeocodingResponseDto = {
+  results: Array<GeocodingResultDto>
+}
+
 export default function Home() {
 
   const [query, setQuery] = useState("")
+  const [geocodingResultUims, setGeocodingResultUims] = useState(new Array<GeocodingResultUim>())
 
   async function geocode() {
-    const geocodingUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${query}&count=10&language=en&format=json`;
-    const geocodingResult = await fetch(geocodingUrl);
-    const geocodingResultJson = await geocodingResult.json()
-    console.log(geocodingResultJson)
+    const url = `https://geocoding-api.open-meteo.com/v1/search?name=${query}&count=10&language=en&format=json`;
+    const response = await fetch(url);
+    console.log(`Response status: ${response.status} (${response.statusText})`)
+    const responseDto: GeocodingResponseDto = await response.json()
+    console.log(`Got response DTO`)
+    console.log(responseDto)
+    const resultDtos: Array<GeocodingResultDto> = responseDto.results
+    console.log(`Got result DTOs`)
+    console.log(resultDtos)
+    const resultUims = resultDtos.map(
+      (resultDto) => new GeocodingResultUim(resultDto.name, resultDto.admin2)
+    )
+    console.log(`Got result UIMs`)
+    console.log(resultUims)
+    setGeocodingResultUims(resultUims)
   }
 
   return (
@@ -43,8 +78,17 @@ export default function Home() {
           <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
             <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" onClick={() => { geocode() }}>Search</button>
           </p>
+          <div className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
+            <ul>
+              {
+                geocodingResultUims.map((uim) => {
+                  return <li>{uim.name} ({uim.dept})</li>
+                })
+              }
+            </ul>
+          </div>
         </div>
       </main>
     </div>
-  );
+  )
 }
