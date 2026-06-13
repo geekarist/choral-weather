@@ -66,11 +66,52 @@ type WeatherResponseDto = {
   }
 }
 
+type QualifiedValueUim = {
+  value: number
+  unit: string
+}
+
+class PredictionUim {
+  date: Date
+  sunrise: Date
+  sunset: Date
+  minTemperature: QualifiedValueUim
+  maxTemperature: QualifiedValueUim
+  precipitationSum: QualifiedValueUim
+  precipitationProbability: QualifiedValueUim
+
+  constructor(
+    date: Date,
+    sunrise: Date,
+    sunset: Date,
+    minTemperature: QualifiedValueUim,
+    maxTemperature: QualifiedValueUim,
+    precipitationSum: QualifiedValueUim,
+    precipitationProbability: QualifiedValueUim,
+  ) {
+    this.date = date
+    this.sunrise = sunrise
+    this.sunset = sunset
+    this.minTemperature = minTemperature
+    this.maxTemperature = maxTemperature
+    this.precipitationSum = precipitationSum
+    this.precipitationProbability = precipitationProbability
+  }
+}
+
+class WeatherForecastUim {
+  dailyPredictions: PredictionUim[]
+
+  constructor(dailyPredictions: PredictionUim[]) {
+    this.dailyPredictions = dailyPredictions
+  }
+}
+
 export default function Home() {
 
   const [query, setQuery] = useState("")
   const [geocodingResultUims, setGeocodingResultUims] = useState(new Array<GeocodingResultUim>())
-  const [selectedCityId, setSelectedCityId] = useState<number>()
+  const [weatherForecastUim, setWeatherForecastUim] = useState<WeatherForecastUim>()
 
   async function geocode() {
     const url = `https://geocoding-api.open-meteo.com/v1/search?name=${query}&count=10&language=en&format=json`;
@@ -85,8 +126,11 @@ export default function Home() {
     setGeocodingResultUims(resultUims)
   }
 
-  async function findWeather() {
+  async function findWeather(selectedCityId: number) {
+    console.log(`Selected city ID: ${selectedCityId}`)
     const selectedCityUim = geocodingResultUims.find((uim) => uim.id == selectedCityId)
+    console.log(`Found city UIM`)
+    console.log(selectedCityUim)
     assert(selectedCityUim)
     const lat = selectedCityUim.latitude
     const lon = selectedCityUim.longitude
@@ -95,8 +139,36 @@ export default function Home() {
     const responseDto: WeatherResponseDto = await response.json()
     console.log("Got weather response DTO")
     console.log(responseDto)
-    // const resultUim = buildWeatherUim(responseDto)
-    // setWeatherUim(resultUim)
+    const resultUim = buildWeatherUim(responseDto)
+    setWeatherForecastUim(resultUim)
+  }
+
+  function buildWeatherUim(responseDto: WeatherResponseDto): WeatherForecastUim {
+    let predictionUims = Array<PredictionUim>(responseDto.daily.time.length)
+    for (let i = 0; i < responseDto.daily.time.length; i++) {
+      predictionUims[i] = new PredictionUim(
+        new Date(responseDto.daily.time[i]),
+        new Date(responseDto.daily.sunrise[i]),
+        new Date(responseDto.daily.sunset[i]),
+        {
+          value: responseDto.daily.temperature_2m_min[i],
+          unit: responseDto.daily_units.temperature_2m_min
+        },
+        {
+          value: responseDto.daily.temperature_2m_max[i],
+          unit: responseDto.daily_units.temperature_2m_max
+        },
+        {
+          value: responseDto.daily.precipitation_sum[i],
+          unit: responseDto.daily_units.precipitation_sum
+        },
+        {
+          value: responseDto.daily.precipitation_probability_max[i],
+          unit: responseDto.daily_units.precipitation_probability_max
+        }
+      )
+    }
+    return new WeatherForecastUim(predictionUims)
   }
 
   return (
@@ -122,19 +194,32 @@ export default function Home() {
           </p>
           <div className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
             <select onChange={(event) => {
-              setSelectedCityId(parseInt(event.target.value))
-              findWeather()
+              findWeather(parseInt(event.target.value))
             }}>
-              <option>Select a result</option>
+              <option value={-1}>Select a result</option>
               {
                 geocodingResultUims.map((uim) => {
-                  return <option value={uim.id}>{uim.name} ({uim.dept})</option>
+                  return <option key={uim.id} value={uim.id}>{uim.name} ({uim.dept})</option>
                 })
               }
             </select>
+          </div>
+          <div className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
+            <ul>
+              {
+                weatherForecastUim?.dailyPredictions.map((predictionUim) => {
+                  return <li>
+                    {predictionUim.date.toString()}: {predictionUim.minTemperature.value} {predictionUim.minTemperature.unit} / {predictionUim.maxTemperature.value} {predictionUim.maxTemperature.unit}
+                  </li>
+                })
+              }
+            </ul>
           </div>
         </div>
       </main>
     </div>
   )
 }
+
+
+
