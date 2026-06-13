@@ -72,6 +72,7 @@ type QualifiedValueUim = {
 }
 
 class PredictionUim {
+  key: string
   date: Date
   sunrise: Date
   sunset: Date
@@ -81,6 +82,7 @@ class PredictionUim {
   precipitationProbability: QualifiedValueUim
 
   constructor(
+    key: string,
     date: Date,
     sunrise: Date,
     sunset: Date,
@@ -89,6 +91,7 @@ class PredictionUim {
     precipitationSum: QualifiedValueUim,
     precipitationProbability: QualifiedValueUim,
   ) {
+    this.key = key
     this.date = date
     this.sunrise = sunrise
     this.sunset = sunset
@@ -126,19 +129,14 @@ export default function Home() {
     setGeocodingResultUims(resultUims)
   }
 
-  async function findWeather(selectedCityId: number) {
-    console.log(`Selected city ID: ${selectedCityId}`)
+  async function onCitySelected(selectedCityId: number) {
     const selectedCityUim = geocodingResultUims.find((uim) => uim.id == selectedCityId)
-    console.log(`Found city UIM`)
-    console.log(selectedCityUim)
     assert(selectedCityUim)
     const lat = selectedCityUim.latitude
     const lon = selectedCityUim.longitude
     const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_sum,precipitation_probability_max,weather_code&timezone=auto`
     const response = await fetch(url)
     const responseDto: WeatherResponseDto = await response.json()
-    console.log("Got weather response DTO")
-    console.log(responseDto)
     const resultUim = buildWeatherUim(responseDto)
     setWeatherForecastUim(resultUim)
   }
@@ -146,8 +144,10 @@ export default function Home() {
   function buildWeatherUim(responseDto: WeatherResponseDto): WeatherForecastUim {
     let predictionUims = Array<PredictionUim>(responseDto.daily.time.length)
     for (let i = 0; i < responseDto.daily.time.length; i++) {
+      const predictionTime = responseDto.daily.time[i];
       predictionUims[i] = new PredictionUim(
-        new Date(responseDto.daily.time[i]),
+        `prediction-${predictionTime.toString()}`,
+        new Date(predictionTime),
         new Date(responseDto.daily.sunrise[i]),
         new Date(responseDto.daily.sunset[i]),
         {
@@ -193,14 +193,11 @@ export default function Home() {
             <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" onClick={() => { geocode() }}>Search</button>
           </p>
           <div className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            <select onChange={(event) => {
-              findWeather(parseInt(event.target.value))
-            }}>
+            <select onChange={(event) => onCitySelected(parseInt(event.target.value))}>
               <option value={-1}>Select a result</option>
               {
-                geocodingResultUims.map((uim) => {
-                  return <option key={uim.id} value={uim.id}>{uim.name} ({uim.dept})</option>
-                })
+                geocodingResultUims.map((uim) =>
+                  <option key={uim.id} value={uim.id}>{uim.name} ({uim.dept})</option>)
               }
             </select>
           </div>
@@ -208,8 +205,18 @@ export default function Home() {
             <ul>
               {
                 weatherForecastUim?.dailyPredictions.map((predictionUim) => {
-                  return <li>
-                    {predictionUim.date.toString()}: {predictionUim.minTemperature.value} {predictionUim.minTemperature.unit} / {predictionUim.maxTemperature.value} {predictionUim.maxTemperature.unit}
+                  return <li key={predictionUim.key}>
+                    {
+                      Intl.DateTimeFormat("en-US", { dateStyle: "full" }).format(predictionUim.date)
+                    }: {
+                      predictionUim.minTemperature.value
+                    } {
+                      predictionUim.minTemperature.unit
+                    } / {
+                      predictionUim.maxTemperature.value
+                    } {
+                      predictionUim.maxTemperature.unit
+                    }
                   </li>
                 })
               }
