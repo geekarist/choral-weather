@@ -1,151 +1,74 @@
 'use client'
 
 import assert from "assert";
-import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
-// Geocoding URL:
-// Doc: https://open-meteo.com/en/docs?latitude=48.3357&longitude=2.7442&hourly=&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_sum,precipitation_probability_max,weather_code&timezone=auto
-// Call: https://geocoding-api.open-meteo.com/v1/search?name=Montigny-sur-Loing&count=10&language=en&format=json
+namespace Model {
+  export class City {
+    id: number
+    name: string
+    dept: string
+    latitude: number
+    longitude: number
 
-// Weather API:
-// Doc: https://open-meteo.com/en/docs/geocoding-api?name=Montigny-sur-Loing#api_response
-// Call: https://api.open-meteo.com/v1/forecast?latitude=48.33575&longitude=2.74423&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_sum,precipitation_probability_max,weather_code&timezone=auto
-
-class GeocodingResultUim {
-  id: number
-  name: string
-  dept: string
-  latitude: number
-  longitude: number
-
-  constructor(id: number, name: string, dept: string, latitude: number, longitude: number) {
-    this.id = id
-    this.name = name
-    this.dept = dept
-    this.latitude = latitude
-    this.longitude = longitude
-  }
-}
-
-type GeocodingResultDto = {
-  id: number
-  name: string
-  admin1: string
-  admin2: string
-  admin3: string
-  admin4: string
-  latitude: number
-  longitude: number
-}
-
-type GeocodingResponseDto = {
-  results: Array<GeocodingResultDto>
-}
-
-type WeatherResponseDto = {
-  daily_units: {
-    time: string
-    temperature_2m_max: string
-    temperature_2m_min: string
-    sunrise: string
-    sunset: string
-    precipitation_sum: string
-    precipitation_probability_max: string
-    weather_code: string
-  }
-  daily: {
-    time: string[]
-    temperature_2m_min: number[]
-    temperature_2m_max: number[]
-    sunrise: string[]
-    sunset: string[]
-    precipitation_sum: number[]
-    precipitation_probability_max: number[]
-    weather_code: number[]
-  }
-}
-
-type QualifiedValueUim = {
-  value: number
-  unit: string
-}
-
-class PredictionUim {
-  key: string
-  date: Date
-  sunrise: Date
-  sunset: Date
-  minTemperature: QualifiedValueUim
-  maxTemperature: QualifiedValueUim
-  precipitationSum: QualifiedValueUim
-  precipitationProbability: QualifiedValueUim
-
-  constructor(
-    key: string,
-    date: Date,
-    sunrise: Date,
-    sunset: Date,
-    minTemperature: QualifiedValueUim,
-    maxTemperature: QualifiedValueUim,
-    precipitationSum: QualifiedValueUim,
-    precipitationProbability: QualifiedValueUim,
-  ) {
-    this.key = key
-    this.date = date
-    this.sunrise = sunrise
-    this.sunset = sunset
-    this.minTemperature = minTemperature
-    this.maxTemperature = maxTemperature
-    this.precipitationSum = precipitationSum
-    this.precipitationProbability = precipitationProbability
-  }
-}
-
-class WeatherForecastUim {
-  dailyPredictions: PredictionUim[]
-
-  constructor(dailyPredictions: PredictionUim[]) {
-    this.dailyPredictions = dailyPredictions
-  }
-}
-
-export default function Home() {
-
-  const [query, setQuery] = useState("")
-  const [geocodingResultUims, setGeocodingResultUims] = useState(new Array<GeocodingResultUim>())
-  const [weatherForecastUim, setWeatherForecastUim] = useState<WeatherForecastUim>()
-
-  async function geocode() {
-    const url = `https://geocoding-api.open-meteo.com/v1/search?name=${query}&count=10&language=en&format=json`;
-    const response = await fetch(url);
-    const responseDto: GeocodingResponseDto = await response.json()
-    const resultDtos: Array<GeocodingResultDto> = responseDto.results
-    const resultUims = resultDtos.map(
-      (resultDto) => new GeocodingResultUim(
-        resultDto.id, resultDto.name, resultDto.admin2, resultDto.latitude, resultDto.longitude
-      )
-    )
-    setGeocodingResultUims(resultUims)
+    constructor(id: number, name: string, dept: string, latitude: number, longitude: number) {
+      this.id = id
+      this.name = name
+      this.dept = dept
+      this.latitude = latitude
+      this.longitude = longitude
+    }
   }
 
-  async function onCitySelected(selectedCityId: number) {
-    const selectedCityUim = geocodingResultUims.find((uim) => uim.id == selectedCityId)
-    assert(selectedCityUim)
-    const lat = selectedCityUim.latitude
-    const lon = selectedCityUim.longitude
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_sum,precipitation_probability_max,weather_code&timezone=auto`
-    const response = await fetch(url)
-    const responseDto: WeatherResponseDto = await response.json()
-    const resultUim = buildWeatherUim(responseDto)
-    setWeatherForecastUim(resultUim)
+  export type QualifiedValue = {
+    value: number
+    unit: string
   }
 
-  function buildWeatherUim(responseDto: WeatherResponseDto): WeatherForecastUim {
-    let predictionUims = Array<PredictionUim>(responseDto.daily.time.length)
+  export class Prediction {
+    key: string
+    date: Date
+    sunrise: Date
+    sunset: Date
+    minTemperature: QualifiedValue
+    maxTemperature: QualifiedValue
+    precipitationSum: QualifiedValue
+    precipitationProbability: QualifiedValue
+
+    constructor(
+      key: string,
+      date: Date,
+      sunrise: Date,
+      sunset: Date,
+      minTemperature: QualifiedValue,
+      maxTemperature: QualifiedValue,
+      precipitationSum: QualifiedValue,
+      precipitationProbability: QualifiedValue,
+    ) {
+      this.key = key
+      this.date = date
+      this.sunrise = sunrise
+      this.sunset = sunset
+      this.minTemperature = minTemperature
+      this.maxTemperature = maxTemperature
+      this.precipitationSum = precipitationSum
+      this.precipitationProbability = precipitationProbability
+    }
+  }
+
+  export class Forecast {
+    daily: Prediction[]
+
+    constructor(daily: Prediction[]) {
+      this.daily = daily
+    }
+  }
+
+  export function forecastOf(responseDto: Dto.WeatherResponse): Model.Forecast {
+    let predictionUims = Array<Model.Prediction>(responseDto.daily.time.length)
     for (let i = 0; i < responseDto.daily.time.length; i++) {
       const predictionTime = responseDto.daily.time[i];
-      predictionUims[i] = new PredictionUim(
+      predictionUims[i] = new Model.Prediction(
         `prediction-${predictionTime.toString()}`,
         new Date(predictionTime),
         new Date(responseDto.daily.sunrise[i]),
@@ -168,7 +91,79 @@ export default function Home() {
         }
       )
     }
-    return new WeatherForecastUim(predictionUims)
+    return new Model.Forecast(predictionUims)
+  }
+}
+
+namespace Dto {
+  export type GeocodingResult = {
+    id: number
+    name: string
+    admin1: string
+    admin2: string
+    admin3: string
+    admin4: string
+    latitude: number
+    longitude: number
+  }
+
+  export type GeocodingResponse = {
+    results: Array<GeocodingResult>
+  }
+
+  export type WeatherResponse = {
+    daily_units: {
+      time: string
+      temperature_2m_max: string
+      temperature_2m_min: string
+      sunrise: string
+      sunset: string
+      precipitation_sum: string
+      precipitation_probability_max: string
+      weather_code: string
+    }
+    daily: {
+      time: string[]
+      temperature_2m_min: number[]
+      temperature_2m_max: number[]
+      sunrise: string[]
+      sunset: string[]
+      precipitation_sum: number[]
+      precipitation_probability_max: number[]
+      weather_code: number[]
+    }
+  }
+}
+
+export default function Home() {
+
+  const [query, setQuery] = useState("")
+  const [cityModels, setCityModels] = useState(new Array<Model.City>())
+  const [forecastModel, setForecastModel] = useState<Model.Forecast>()
+
+  async function onCitySearched() {
+    const url = `https://geocoding-api.open-meteo.com/v1/search?name=${query}&count=10&language=en&format=json`
+    const response = await fetch(url);
+    const responseDto: Dto.GeocodingResponse = await response.json()
+    const resultDtos: Array<Dto.GeocodingResult> = responseDto.results
+    const cityModels = resultDtos.map(
+      (resultDto) => new Model.City(
+        resultDto.id, resultDto.name, resultDto.admin2, resultDto.latitude, resultDto.longitude
+      )
+    )
+    setCityModels(cityModels)
+  }
+
+  async function onCitySelected(selectedCityId: number) {
+    const selectedCityModel = cityModels.find((model) => model.id == selectedCityId)
+    assert(selectedCityModel)
+    const lat = selectedCityModel.latitude
+    const lon = selectedCityModel.longitude
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_sum,precipitation_probability_max,weather_code&timezone=auto`
+    const response = await fetch(url)
+    const responseDto: Dto.WeatherResponse = await response.json()
+    const resultModel = Model.forecastOf(responseDto)
+    setForecastModel(resultModel)
   }
 
   return (
@@ -190,32 +185,35 @@ export default function Home() {
             </div>
           </div>
           <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" onClick={() => { geocode() }}>Search</button>
+            <button
+              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+              onClick={() => { onCitySearched() }}>Search
+            </button>
           </p>
           <div className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
             <select onChange={(event) => onCitySelected(parseInt(event.target.value))}>
               <option value={-1}>Select a result</option>
               {
-                geocodingResultUims.map((uim) =>
-                  <option key={uim.id} value={uim.id}>{uim.name} ({uim.dept})</option>)
+                cityModels.map((model) =>
+                  <option key={model.id} value={model.id}>{model.name} ({model.dept})</option>)
               }
             </select>
           </div>
           <div className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
             <ul>
               {
-                weatherForecastUim?.dailyPredictions.map((predictionUim) => {
-                  return <li key={predictionUim.key}>
+                forecastModel?.daily.map((predictionModel) => {
+                  return <li key={predictionModel.key}>
                     {
-                      Intl.DateTimeFormat("en-US", { dateStyle: "full" }).format(predictionUim.date)
+                      Intl.DateTimeFormat("en-US", { dateStyle: "full" }).format(predictionModel.date)
                     }: {
-                      predictionUim.minTemperature.value
+                      predictionModel.minTemperature.value
                     } {
-                      predictionUim.minTemperature.unit
+                      predictionModel.minTemperature.unit
                     } / {
-                      predictionUim.maxTemperature.value
+                      predictionModel.maxTemperature.value
                     } {
-                      predictionUim.maxTemperature.unit
+                      predictionModel.maxTemperature.unit
                     }
                   </li>
                 })
@@ -227,6 +225,3 @@ export default function Home() {
     </div>
   )
 }
-
-
-
