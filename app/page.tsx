@@ -1,5 +1,6 @@
 'use client'
 
+import assert from "assert";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 
@@ -12,12 +13,18 @@ import { useEffect, useState } from "react";
 // Call: https://api.open-meteo.com/v1/forecast?latitude=48.33575&longitude=2.74423&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_sum,precipitation_probability_max,weather_code&timezone=auto
 
 class GeocodingResultUim {
+  id: number
   name: string
   dept: string
+  latitude: number
+  longitude: number
 
-  constructor(name: string, dept: string) {
+  constructor(id: number, name: string, dept: string, latitude: number, longitude: number) {
+    this.id = id
     this.name = name
     this.dept = dept
+    this.latitude = latitude
+    this.longitude = longitude
   }
 }
 
@@ -28,16 +35,42 @@ type GeocodingResultDto = {
   admin2: string
   admin3: string
   admin4: string
+  latitude: number
+  longitude: number
 }
 
 type GeocodingResponseDto = {
   results: Array<GeocodingResultDto>
 }
 
+type WeatherResponseDto = {
+  daily_units: {
+    time: string
+    temperature_2m_max: string
+    temperature_2m_min: string
+    sunrise: string
+    sunset: string
+    precipitation_sum: string
+    precipitation_probability_max: string
+    weather_code: string
+  }
+  daily: {
+    time: string[]
+    temperature_2m_min: number[]
+    temperature_2m_max: number[]
+    sunrise: string[]
+    sunset: string[]
+    precipitation_sum: number[]
+    precipitation_probability_max: number[]
+    weather_code: number[]
+  }
+}
+
 export default function Home() {
 
   const [query, setQuery] = useState("")
   const [geocodingResultUims, setGeocodingResultUims] = useState(new Array<GeocodingResultUim>())
+  const [selectedCityId, setSelectedCityId] = useState<number>()
 
   async function geocode() {
     const url = `https://geocoding-api.open-meteo.com/v1/search?name=${query}&count=10&language=en&format=json`;
@@ -45,9 +78,25 @@ export default function Home() {
     const responseDto: GeocodingResponseDto = await response.json()
     const resultDtos: Array<GeocodingResultDto> = responseDto.results
     const resultUims = resultDtos.map(
-      (resultDto) => new GeocodingResultUim(resultDto.name, resultDto.admin2)
+      (resultDto) => new GeocodingResultUim(
+        resultDto.id, resultDto.name, resultDto.admin2, resultDto.latitude, resultDto.longitude
+      )
     )
     setGeocodingResultUims(resultUims)
+  }
+
+  async function findWeather() {
+    const selectedCityUim = geocodingResultUims.find((uim) => uim.id == selectedCityId)
+    assert(selectedCityUim)
+    const lat = selectedCityUim.latitude
+    const lon = selectedCityUim.longitude
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_sum,precipitation_probability_max,weather_code&timezone=auto`
+    const response = await fetch(url)
+    const responseDto: WeatherResponseDto = await response.json()
+    console.log("Got weather response DTO")
+    console.log(responseDto)
+    // const resultUim = buildWeatherUim(responseDto)
+    // setWeatherUim(resultUim)
   }
 
   return (
@@ -72,13 +121,17 @@ export default function Home() {
             <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" onClick={() => { geocode() }}>Search</button>
           </p>
           <div className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            <ul>
+            <select onChange={(event) => {
+              setSelectedCityId(parseInt(event.target.value))
+              findWeather()
+            }}>
+              <option>Select a result</option>
               {
                 geocodingResultUims.map((uim) => {
-                  return <li>{uim.name} ({uim.dept})</li>
+                  return <option value={uim.id}>{uim.name} ({uim.dept})</option>
                 })
               }
-            </ul>
+            </select>
           </div>
         </div>
       </main>
