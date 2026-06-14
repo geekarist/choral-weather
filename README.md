@@ -8,17 +8,41 @@ TBD
 
 #### Planned
 
+- Let users search for weather by city.
+- Show the current temperature for the selected location.
+- Show high and low temperatures for the day.
+- Show a multi-day weather forecast.
+
 ## Features
 
-- Let users search for weather by city, ZIP code.
+Backend:
+
+- Provide facade for actual weather API
+- Provide location endpoint
+```
+GET /api/location?q=Montigny
+```
+- Provide forecast endpoint
+```
+GET /api/forecast?latitude=48.8566&longitude=2.3522
+```
+- Specify a contract between frontend and backend
+- Manage invalid city queries before sending them to the actual API (=> status 400)
+- Manage actual-API failure (=> status 502)
+- Limit the number of results to 5
+
+Full stack:
+
+- Manage favorite locations (CRUD)
+- Store favorite locations to a backend DB
+
+Frontend:
+
 - Let user search for current location.
 - Request permission before using the user's current location.
-- Show the current temperature for the selected location.
 - Show the current weather condition, such as sunny, cloudy, rain, snow, or storm.
-- Show high and low temperatures for the day.
 - Show "feels like" temperature.
 - Show humidity, wind speed, and precipitation chance.
-- Show a multi-day weather forecast.
 - Show an hourly forecast for the current day.
 - Display weather icons that match each forecast condition.
 - Let users switch between Fahrenheit and Celsius.
