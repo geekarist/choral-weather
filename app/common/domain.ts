@@ -1,7 +1,6 @@
 import { Dto } from "./dto"
 
-// TODO cpele: Rename to Domain
-export namespace Model {
+export namespace Domain {
 
     export class City {
         id: number
@@ -63,12 +62,11 @@ export namespace Model {
         }
     }
 
-    // TODO cpele: Move DTO/model mapping to backend
-    export function forecastOf(responseDto: Dto.WeatherResponse): Model.Forecast {
-        let predictionUims = Array<Model.Prediction>(responseDto.daily.time.length)
+    export function forecastOf(responseDto: Dto.WeatherResponse): Domain.Forecast {
+        let predictionUims = Array<Domain.Prediction>(responseDto.daily.time.length)
         for (let i = 0; i < responseDto.daily.time.length; i++) {
             const predictionTime = responseDto.daily.time[i];
-            predictionUims[i] = new Model.Prediction(
+            predictionUims[i] = new Domain.Prediction(
                 `prediction-${predictionTime.toString()}`,
                 new Date(predictionTime),
                 new Date(responseDto.daily.sunrise[i]),
@@ -91,6 +89,6 @@ export namespace Model {
                 }
             )
         }
-        return new Model.Forecast(predictionUims)
+        return new Domain.Forecast(predictionUims)
     }
 }

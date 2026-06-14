@@ -2,38 +2,48 @@
 
 import assert from "assert";
 import { useState } from "react";
-import { Model } from "./common/model";
+import { Domain } from "./common/domain";
 import { Dto } from "./common/dto";
 
 export default function Home() {
 
   const [query, setQuery] = useState("")
-  const [cityModels, setCityModels] = useState(new Array<Model.City>())
-  const [forecastModel, setForecastModel] = useState<Model.Forecast>()
+  const [cityDms, setCityDms] = useState(new Array<Domain.City>())
+  const [forecastDm, setForecastDm] = useState<Domain.Forecast>()
 
-  async function onCitySearched() {
-    const url = `https://geocoding-api.open-meteo.com/v1/search?name=${query}&count=10&language=en&format=json`
+  async function retrieveCities(query: string): Promise<Domain.City[]> {
+    const url = `https://geocoding-api.open-meteo.com/v1/search?name=${query}&count=10&language=en&format=json`;
     const response = await fetch(url);
-    const responseDto: Dto.GeocodingResponse = await response.json()
-    const resultDtos: Array<Dto.GeocodingResult> = responseDto.results
-    const cityModels = resultDtos.map(
-      (resultDto) => new Model.City(
+    const responseDto: Dto.GeocodingResponse = await response.json();
+    const resultDtos: Array<Dto.GeocodingResult> = responseDto.results;
+    const cityDms = resultDtos.map(
+      (resultDto) => new Domain.City(
         resultDto.id, resultDto.name, resultDto.admin2, resultDto.latitude, resultDto.longitude
       )
-    )
-    setCityModels(cityModels)
+    );
+    return cityDms;
   }
 
-  async function onCitySelected(selectedCityId: number) {
-    const selectedCityModel = cityModels.find((model) => model.id == selectedCityId)
-    assert(selectedCityModel)
+  async function retrieveForecast(selectedCityModel: Domain.City): Promise<Domain.Forecast> {
     const lat = selectedCityModel.latitude
     const lon = selectedCityModel.longitude
     const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_sum,precipitation_probability_max,weather_code&timezone=auto`
     const response = await fetch(url)
     const responseDto: Dto.WeatherResponse = await response.json()
-    const resultModel = Model.forecastOf(responseDto)
-    setForecastModel(resultModel)
+    const resultDm = Domain.forecastOf(responseDto)
+    return resultDm
+  }
+
+  async function onCitySearched() {
+    const cityDms = await retrieveCities(query);
+    setCityDms(cityDms)
+  }
+
+  async function onCitySelected(selectedCityId: number) {
+    const selectedCityDm = cityDms.find((model) => model.id == selectedCityId)
+    assert(selectedCityDm)
+    const resultDm = await retrieveForecast(selectedCityDm)
+    setForecastDm(resultDm)
   }
 
   return (
@@ -64,7 +74,7 @@ export default function Home() {
             <select onChange={(event) => onCitySelected(parseInt(event.target.value))}>
               <option value={-1}>Select a result</option>
               {
-                cityModels.map((model) =>
+                cityDms.map((model) =>
                   <option key={model.id} value={model.id}>{model.name} ({model.dept})</option>)
               }
             </select>
@@ -72,7 +82,7 @@ export default function Home() {
           <div className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
             <ul>
               {
-                forecastModel?.daily.map((predictionModel) => {
+                forecastDm?.daily.map((predictionModel) => {
                   return <li key={predictionModel.key}>
                     {
                       Intl.DateTimeFormat("en-US", { dateStyle: "full" }).format(predictionModel.date)

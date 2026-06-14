@@ -1,4 +1,3 @@
-// TODO cpele: Move DTOs to backend
 export namespace Dto {
   export type GeocodingResult = {
     id: number
