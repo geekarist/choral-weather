@@ -1,7 +1,7 @@
 import { Domain } from "@/app/common/domain"
 import { Dto } from "@/app/common/dto"
 import assert from "assert"
-import { NextRequest } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 
 export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams
@@ -11,7 +11,8 @@ export async function GET(request: NextRequest) {
     const lon = searchParams.get("lon")
     assert(lon)
     const lonFloat = parseFloat(lon)
-    return await retrieveForecast(latFloat, lonFloat)
+    const forecastDm = await retrieveForecast(latFloat, lonFloat)
+    return NextResponse.json(forecastDm)
 }
 
 async function retrieveForecast(lat: number, lon: number) {
