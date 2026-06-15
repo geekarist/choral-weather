@@ -3,7 +3,6 @@
 import assert from "assert";
 import { useState } from "react";
 import { Domain } from "./common/domain";
-import { Dto } from "./common/dto";
 
 export default function Home() {
 
@@ -12,26 +11,17 @@ export default function Home() {
   const [forecastDm, setForecastDm] = useState<Domain.Forecast>()
 
   async function retrieveCities(query: string): Promise<Domain.City[]> {
-    const url = `https://geocoding-api.open-meteo.com/v1/search?name=${query}&count=10&language=en&format=json`;
-    const response = await fetch(url);
-    const responseDto: Dto.GeocodingResponse = await response.json();
-    const resultDtos: Array<Dto.GeocodingResult> = responseDto.results;
-    const cityDms = resultDtos.map(
-      (resultDto) => new Domain.City(
-        resultDto.id, resultDto.name, resultDto.admin2, resultDto.latitude, resultDto.longitude
-      )
-    );
-    return cityDms;
+    const locationResponse = await fetch(`/api/location?q=${query}`)
+    const locationDm = await locationResponse.json()
+    return locationDm
   }
 
-  async function retrieveForecast(selectedCityModel: Domain.City): Promise<Domain.Forecast> {
-    const lat = selectedCityModel.latitude
-    const lon = selectedCityModel.longitude
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_sum,precipitation_probability_max,weather_code&timezone=auto`
-    const response = await fetch(url)
-    const responseDto: Dto.WeatherResponse = await response.json()
-    const resultDm = Domain.forecastOf(responseDto)
-    return resultDm
+  async function retrieveForecast(selectedCityDm: Domain.City): Promise<Domain.Forecast> {
+    const lat = selectedCityDm.latitude
+    const lon = selectedCityDm.longitude
+    const forecastResponse = await fetch(`/api/forecast?lat=${lat}&lon=${lon}`)
+    const locationDm = await forecastResponse.json()
+    return locationDm
   }
 
   async function onCitySearched() {
