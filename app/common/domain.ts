@@ -2,26 +2,9 @@ import { Dto } from "./dto"
 
 export namespace Domain {
 
-    export class City {
-        id: number
-        name: string
-        dept: string
-        latitude: number
-        longitude: number
+    export class City extends Dto.City { }
 
-        constructor(id: number, name: string, dept: string, latitude: number, longitude: number) {
-            this.id = id
-            this.name = name
-            this.dept = dept
-            this.latitude = latitude
-            this.longitude = longitude
-        }
-    }
-
-    export type QualifiedValue = {
-        value: number
-        unit: string
-    }
+    export type QualifiedValue = Dto.QualifiedValue 
 
     export class Prediction {
         key: string
@@ -62,33 +45,32 @@ export namespace Domain {
         }
     }
 
-    export function forecastOf(responseDto: Dto.WeatherResponse): Domain.Forecast {
-        let predictionUims = Array<Domain.Prediction>(responseDto.daily.time.length)
-        for (let i = 0; i < responseDto.daily.time.length; i++) {
-            const predictionTime = responseDto.daily.time[i];
-            predictionUims[i] = new Domain.Prediction(
-                `prediction-${predictionTime.toString()}`,
-                new Date(predictionTime),
-                new Date(responseDto.daily.sunrise[i]),
-                new Date(responseDto.daily.sunset[i]),
-                {
-                    value: responseDto.daily.temperature_2m_min[i],
-                    unit: responseDto.daily_units.temperature_2m_min
-                },
-                {
-                    value: responseDto.daily.temperature_2m_max[i],
-                    unit: responseDto.daily_units.temperature_2m_max
-                },
-                {
-                    value: responseDto.daily.precipitation_sum[i],
-                    unit: responseDto.daily_units.precipitation_sum
-                },
-                {
-                    value: responseDto.daily.precipitation_probability_max[i],
-                    unit: responseDto.daily_units.precipitation_probability_max
-                }
-            )
-        }
-        return new Domain.Forecast(predictionUims)
+    export function citiesOf(cityDtos: Dto.City[]): City[] {
+        return cityDtos.map((cityDto) => new City(
+            cityDto.id,
+            cityDto.name,
+            cityDto.dept,
+            cityDto.latitude,
+            cityDto.longitude
+        ))
+    }
+
+    export function forecastOf(forecastDto: Dto.Forecast) {
+        return new Forecast(
+            forecastDto.daily.map((predictionDto) => predictionOf(predictionDto))
+        )
+    }
+
+    export function predictionOf(predictionDto: Dto.Prediction) {
+        return new Prediction(
+            predictionDto.key,
+            new Date(predictionDto.date),
+            new Date(predictionDto.sunrise),
+            new Date(predictionDto.sunset),
+            predictionDto.minTemperature,
+            predictionDto.maxTemperature,
+            predictionDto.precipitationSum,
+            predictionDto.precipitationProbability
+        )
     }
 }

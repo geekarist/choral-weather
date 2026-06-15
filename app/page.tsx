@@ -3,6 +3,7 @@
 import assert from "assert";
 import { useState } from "react";
 import { Domain } from "./common/domain";
+import { Dto } from "./common/dto";
 
 export default function Home() {
 
@@ -11,17 +12,17 @@ export default function Home() {
   const [forecastDm, setForecastDm] = useState<Domain.Forecast>()
 
   async function retrieveCities(query: string): Promise<Domain.City[]> {
-    const locationResponse = await fetch(`/api/location?q=${query}`)
-    const locationDm = await locationResponse.json()
-    return locationDm
+    const citiesResponse = await fetch(`/api/cities?q=${query}`)
+    const cityDtos: Dto.City[] = await citiesResponse.json()
+    return Domain.citiesOf(cityDtos)
   }
 
   async function retrieveForecast(selectedCityDm: Domain.City): Promise<Domain.Forecast> {
     const lat = selectedCityDm.latitude
     const lon = selectedCityDm.longitude
     const forecastResponse = await fetch(`/api/forecast?lat=${lat}&lon=${lon}`)
-    const locationDm = await forecastResponse.json()
-    return locationDm
+    const forecastDto = await forecastResponse.json()
+    return Domain.forecastOf(forecastDto)
   }
 
   async function onCitySearched() {
@@ -75,7 +76,9 @@ export default function Home() {
                 forecastDm?.daily.map((predictionModel) => {
                   return <li key={predictionModel.key}>
                     {
-                      Intl.DateTimeFormat("en-US", { dateStyle: "full" }).format(predictionModel.date)
+                      Intl
+                        .DateTimeFormat("en-US", { dateStyle: "full" })
+                        .format(predictionModel.date)
                     }: {
                       predictionModel.minTemperature.value
                     } {
