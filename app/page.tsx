@@ -54,13 +54,11 @@ export default function Home() {
                 value={query}
                 onChange={(event) => { setQuery(event.target.value) }} />
             </div>
-          </div>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
             <button
-              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mt-2"
               onClick={() => { onCitySearched() }}>Search
             </button>
-          </p>
+          </div>
           <div className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
             <select onChange={(event) => onCitySelected(parseInt(event.target.value))}>
               <option value={-1}>Select a result</option>
@@ -69,9 +67,11 @@ export default function Home() {
                   <option key={model.id} value={model.id}>{model.name} ({model.dept})</option>)
               }
             </select>
-          </div>
-          <div className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            <ul>
+            <button
+              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+              Add favorite
+            </button>
+            <ul className="mt-6">
               {
                 forecastDm?.daily.map((predictionModel) => {
                   return <li key={predictionModel.key}>
